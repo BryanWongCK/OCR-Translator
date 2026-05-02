@@ -16,4 +16,4 @@ This tool is currently only available on Windows and was created with the use of
 2. Download a vision capable LLM model
     1. By default a .config file is generated with the model name "qwen3-vl-8b".
     2. Replace the model name in the config with a new model name if not using qwen3-vl-8b.
-3. Open the solution, compile (Visual Studio or dotnet) and run **or** run "[OCR Translator.exe](https://github.com/BryanWongCK/OCR-Translator/releases/tag/1.0)" directly.
+3. Open the solution, compile (Visual Studio or dotnet) and run **or** run "[OCR Translator.exe](https://github.com/BryanWongCK/OCR-Translator/releases)" directly.
