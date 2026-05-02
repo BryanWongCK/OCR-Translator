@@ -1,0 +1,31 @@
+<Window x:Class="OCRTranslator.RegionSelector"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="#50000000"
+        Topmost="True"
+        WindowState="Normal"
+        WindowStartupLocation="Manual"
+        Cursor="Cross"
+        ShowInTaskbar="False"
+        Title="Select Region">
+  <Canvas x:Name="RootCanvas">
+    <!-- Rubber-band rectangle drawn in code-behind -->
+    <Rectangle x:Name="SelectRect"
+               Stroke="#00e5a0" StrokeThickness="2"
+               Fill="#1500e5a0"
+               Visibility="Collapsed"/>
+    <!-- Hint label -->
+    <Border x:Name="HintBorder" Canvas.Left="20" Canvas.Top="20"
+            Background="#cc000000" CornerRadius="6" Padding="14,7">
+      <TextBlock Text="Click and drag to select region  ·  Esc to cancel"
+                 Foreground="White" FontFamily="Segoe UI" FontSize="14"/>
+    </Border>
+    <!-- Size readout -->
+    <Border x:Name="SizeBorder" Background="#cc000000" CornerRadius="4" Padding="8,4"
+            Visibility="Collapsed">
+      <TextBlock x:Name="TxtSize" Foreground="#00e5a0" FontFamily="Consolas" FontSize="12"/>
+    </Border>
+  </Canvas>
+</Window>

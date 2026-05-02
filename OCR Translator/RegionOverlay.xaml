@@ -1,0 +1,31 @@
+<Window x:Class="OCRTranslator.RegionOverlay"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        IsHitTestVisible="False"
+        Title="RegionOverlay">
+  <Grid>
+    <!-- Outer border glow -->
+    <Border BorderBrush="#4000e5a0" BorderThickness="4" CornerRadius="1"/>
+    <!-- Inner crisp border -->
+    <Border BorderBrush="#00e5a0" BorderThickness="1.5" CornerRadius="1"/>
+    <!-- Corner marks: top-left -->
+    <Canvas>
+      <Rectangle Canvas.Left="0"  Canvas.Top="0"  Width="12" Height="2" Fill="#00e5a0"/>
+      <Rectangle Canvas.Left="0"  Canvas.Top="0"  Width="2"  Height="12" Fill="#00e5a0"/>
+      <!-- top-right -->
+      <Rectangle Canvas.Right="0" Canvas.Top="0"  Width="12" Height="2" Fill="#00e5a0"/>
+      <Rectangle Canvas.Right="0" Canvas.Top="0"  Width="2"  Height="12" Fill="#00e5a0"/>
+      <!-- bottom-left -->
+      <Rectangle Canvas.Left="0"  Canvas.Bottom="0" Width="12" Height="2" Fill="#00e5a0"/>
+      <Rectangle Canvas.Left="0"  Canvas.Bottom="0" Width="2"  Height="12" Fill="#00e5a0"/>
+      <!-- bottom-right -->
+      <Rectangle Canvas.Right="0" Canvas.Bottom="0" Width="12" Height="2" Fill="#00e5a0"/>
+      <Rectangle Canvas.Right="0" Canvas.Bottom="0" Width="2"  Height="12" Fill="#00e5a0"/>
+    </Canvas>
+  </Grid>
+</Window>
