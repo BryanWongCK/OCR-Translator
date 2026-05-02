@@ -244,9 +244,9 @@ public partial class MainWindow : Window
             "Extract the text from the image above as if you were reading it naturally. " +
             "Return only valid words and complete sentences. " +
             "Respond in exactly this format using English only for ROMANIZED and TRANSLATION:\n" +
-            "ORIGINAL:\n<extracted text>\n\n" +
-            "ROMANIZED:\n<romaji>\n\n" +
-            "TRANSLATION:\n<english translation in English language only>";
+            "ORIGINAL:\n—\n\n" +
+            "ROMANIZED:\n—\n\n" +
+            "TRANSLATION:\n—";
 
         var body = new
         {
