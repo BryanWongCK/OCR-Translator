@@ -2,7 +2,7 @@
 OCR Translator is an entirely offline local JP to EN Translation tool enabled by OCR using self hosted Vision capable LLM Models. The default model used  is [Qwen3-VL-8B](https://huggingface.co/lmstudio-community/Qwen3-VL-8B-Instruct-GGUF).
 
 OCR Translator supports selectable region to be translated and supports customizable auto translation.
-[Sample](Images/sample.JPG)
+[Sample](/Images/sample.JPG)
 
 This tool is currently only available on Windows and was created with the use of AI tools.
 
