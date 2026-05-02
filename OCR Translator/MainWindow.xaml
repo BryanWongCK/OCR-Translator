@@ -1,7 +1,7 @@
 <Window x:Class="OCRTranslator.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="OCR Translator" Height="415" Width="420"
+        Title="OCR Translator" Height="396" Width="420"
         ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen"
         Background="#0d0d0f" Foreground="#e8e8ec"
         FontFamily="Segoe UI">
@@ -127,7 +127,7 @@
 
     <!-- Mode -->
     <TextBlock Style="{StaticResource Label}">MODE</TextBlock>
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
       <RadioButton x:Name="RadioManual" Content="Manual" IsChecked="True"
                    Foreground="#e8e8ec" FontSize="13" VerticalContentAlignment="Center"
                    Margin="0,0,20,0" Checked="RadioManual_Checked"/>
@@ -139,7 +139,22 @@
       <TextBlock Foreground="#444455" FontSize="13"
                  VerticalAlignment="Center" Margin="7,0,0,0">seconds</TextBlock>
     </StackPanel>
-
+    <StackPanel x:Name="PanelThreshold" Visibility="Collapsed" Margin="0,0,0,5">
+        <TextBlock Style="{StaticResource Label}">CHANGE THRESHOLD (0 = exact, higher = less sensitive)</TextBlock>
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Slider x:Name="SliderThreshold" Minimum="0" Maximum="50" Value="25"
+            IsSnapToTickEnabled="True" TickFrequency="1"
+            VerticalAlignment="Center"/>
+            <TextBlock x:Name="TxtThresholdValue" Grid.Column="1" Margin="10,0,0,0"
+                FontFamily="Consolas" FontSize="12" Foreground="#00e5a0"
+                VerticalAlignment="Center" Width="24" Text="25"/>
+        </Grid>
+    </StackPanel>
+      
     <!-- Action buttons -->
     <Grid Margin="0,0,0,18">
       <Grid.ColumnDefinitions>

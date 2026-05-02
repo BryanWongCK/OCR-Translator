@@ -20,6 +20,8 @@ public partial class MainWindow : Window
     private DispatcherTimer? _autoTimer;
     private readonly OutputWindow _output;
     private readonly RegionOverlay _overlay = new();
+    private byte[]? _lastHash;
+    private bool _hasLastHash;
     private string modelName;
 
     public MainWindow()
@@ -42,6 +44,7 @@ public partial class MainWindow : Window
             _output.Left = Left + Width + 10;
             _output.Top  = Top;
             _output.Show();
+            SliderThreshold.ValueChanged += (_, e) => TxtThresholdValue.Text = ((int)SliderThreshold.Value).ToString();
         };
 
         Closed += (_, _) =>
@@ -155,6 +158,7 @@ public partial class MainWindow : Window
             TxtRegion.Text       = $"X:{r.X}  Y:{r.Y}  {r.W} × {r.H} px";
             TxtRegion.Foreground = Brushes.LightGreen;
             BtnCapture.IsEnabled = true;
+            _hasLastHash = false;
             SetStatus("Region set — ready.", "#00e5a0");
 
             _overlay.SetRegion(r);
@@ -165,12 +169,18 @@ public partial class MainWindow : Window
     // ── Mode radio buttons ───────────────────────────────────────────────────
     private void RadioManual_Checked(object sender, RoutedEventArgs e)
     {
-        if (TxtInterval is not null) TxtInterval.IsEnabled = false;
+        if (TxtInterval is null) return;
+        TxtInterval.IsEnabled = false;
+        PanelThreshold.Visibility = Visibility.Collapsed;
+        Height = 396; // Hidden threshold slider
     }
 
     private void RadioAuto_Checked(object sender, RoutedEventArgs e)
     {
-        if (TxtInterval is not null) TxtInterval.IsEnabled = true;
+        if (TxtInterval is null) return;
+        TxtInterval.IsEnabled = true;
+        PanelThreshold.Visibility = Visibility.Visible;
+        Height = 446;  // Visible threshold slider
     }
 
     // ── Capture button ───────────────────────────────────────────────────────
@@ -205,6 +215,7 @@ public partial class MainWindow : Window
         BtnCapture.IsEnabled      = true;
         BtnSelectRegion.IsEnabled = true;
         BtnStop.Visibility        = Visibility.Collapsed;
+        _hasLastHash = false;
         SetStatus("Stopped.", "#555566");
     }
 
@@ -218,6 +229,16 @@ public partial class MainWindow : Window
         string base64;
         try   { base64 = ScreenCapture.CaptureBase64(_region); }
         catch (Exception ex) { SetStatus($"Capture error: {ex.Message}", "#ff5566"); return; }
+
+        // Skip if image unchanged
+        var hash = ScreenCapture.AverageHash(base64);
+        if (RadioAuto.IsChecked == true && _hasLastHash && ScreenCapture.HammingDistance(hash, _lastHash) < (int)SliderThreshold.Value)
+        {
+            SetStatus($"No change — {DateTime.Now:HH:mm:ss}", "#333344");
+            return;
+        }
+        _lastHash = hash;
+        _hasLastHash = true;
 
         SetStatus("Sending to Model…", "#888898");
 
@@ -243,10 +264,13 @@ public partial class MainWindow : Window
         const string prompt =
             "Extract the text from the image above as if you were reading it naturally. " +
             "Return only valid words and complete sentences. " +
-            "Respond in exactly this format using English only for ROMANIZED and TRANSLATION:\n" +
-            "ORIGINAL:\n—\n\n" +
-            "ROMANIZED:\n—\n\n" +
-            "TRANSLATION:\n—";
+            "If no text is detected, return — for all fields. " +
+            "The ROMANIZED field must always use the latin alphabet. " +
+            "The TRANSLATION field must always be in English, even if the original text is already in English. " +
+            "Respond in exactly this format:\n" +
+            "ORIGINAL:\n[the extracted text as-is]\n\n" +
+            "ROMANIZED:\n[latin alphabet romanization of the original, or — if already latin]\n\n" +
+            "TRANSLATION:\n[English translation, or copy the original if it is already English]";
 
         var body = new
         {
@@ -256,7 +280,7 @@ public partial class MainWindow : Window
             max_tokens  = 1024,
             messages    = new object[]
             {
-                new { role = "system", content = "You are a helpful Japanese OCR, and translation assistant. /no_think" },
+                new { role = "system", content = "You are a Japanese OCR and translation assistant. Always respond in the exact format given. TRANSLATION must always be in English. ROMANIZED must always use the latin alphabet. Never translate into Japanese. /no_think" },
                 new
                 {
                     role    = "user",

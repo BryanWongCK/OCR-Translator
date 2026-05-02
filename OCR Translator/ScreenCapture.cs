@@ -48,4 +48,42 @@ public static class ScreenCapture
             ReleaseDC(IntPtr.Zero, screenDC);
         }
     }
+
+    public static byte[] AverageHash(string base64, int size = 16)
+    {
+        using var ms = new MemoryStream(Convert.FromBase64String(base64));
+        using var src = System.Drawing.Image.FromStream(ms);
+
+        using var small = new System.Drawing.Bitmap(size, size, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        using var g = System.Drawing.Graphics.FromImage(small);
+        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
+        g.DrawImage(src, 0, 0, size, size);
+
+        int total = 0;
+        var pixels = new int[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                var c = small.GetPixel(x, y);
+                int brightness = (c.R + c.G + c.B) / 3;
+                pixels[y * size + x] = brightness;
+                total += brightness;
+            }
+        int avg = total / pixels.Length;
+
+        var hash = new byte[(pixels.Length + 7) / 8];
+        for (int i = 0; i < pixels.Length; i++)
+            if (pixels[i] >= avg)
+                hash[i / 8] |= (byte)(1 << (i % 8));
+
+        return hash;
+    }
+
+    public static int HammingDistance(byte[] a, byte[] b)
+    {
+        int dist = 0;
+        for (int i = 0; i < Math.Min(a.Length, b.Length); i++)
+            dist += System.Numerics.BitOperations.PopCount((uint)(a[i] ^ b[i]));
+        return dist;
+    }
 }
