@@ -1,0 +1,34 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish
+        run: dotnet publish "OCR Translator/OCR Translator/OCR Translator.csproj" -c Release -o ./dist
+
+      - name: Remove unnecessary files
+        run: Remove-Item ./dist/*.pdb
+
+      - name: Zip
+        run: Compress-Archive -Path ./dist/* -DestinationPath ./OCR-Translator_${{ github.ref_name }}.zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: OCR Translator ${{ github.ref_name }}
+          files: OCR-Translator_${{ github.ref_name }}.zip
