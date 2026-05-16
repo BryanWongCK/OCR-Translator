@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
 
@@ -16,13 +17,16 @@ public partial class MainWindow : Window
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(90) };
 
-    private CaptureRegion? _region;
-    private DispatcherTimer? _autoTimer;
-    private readonly OutputWindow _output;
-    private readonly RegionOverlay _overlay = new();
-    private byte[]? _lastHash;
-    private bool _hasLastHash;
+    private CaptureRegion? region;
+    private DispatcherTimer? autoTimer;
+    private readonly OutputWindow output;
+    private readonly RegionOverlay overlay = new();
+    private byte[]? lastHash;
+    private bool hasLastHash;
     private string modelName;
+    private string context;
+    private string lastStatus;
+    private bool requestLock;
 
     public MainWindow()
     {
@@ -34,26 +38,58 @@ public partial class MainWindow : Window
             modelName = "qwen3-vl-8b";
             File.WriteAllText(".config", modelName);
         }
+
         StartModel(modelName);
 
         InitializeComponent();
-        _output = new OutputWindow();
+        output = new OutputWindow();
 
         Loaded += (_, _) =>
         {
-            _output.Left = Left + Width + 10;
-            _output.Top  = Top;
-            _output.Show();
+            output.Left = Left + Width + 10;
+            output.Top  = Top;
+            output.Show();
             SliderThreshold.ValueChanged += (_, e) => TxtThresholdValue.Text = ((int)SliderThreshold.Value).ToString();
         };
 
         Closed += (_, _) =>
         {
-            _autoTimer?.Stop();
-            _output.ForceClose();
-            _overlay.Close();
+            autoTimer?.Stop();
+            output.ForceClose();
+            overlay.Close();
             StopModel(modelName);
         };
+    }
+
+    private void BtnReloadSettings_Click(object sender, RoutedEventArgs e)
+    {
+        context = "";
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select Settings File",
+            Filter = "All Files (*.*)|*.*",
+            InitialDirectory = AppDomain.CurrentDomain.BaseDirectory
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try { LoadSettingFile(dialog.FileName); }
+            catch { /* ignore malformed mapping file */ }
+        }
+    }
+
+    private void LoadSettingFile(string path)
+    {
+        var arr = JsonNode.Parse(File.ReadAllText(path))?.AsArray();
+        if (arr != null)
+        {
+            var lines = arr
+                .Where(n => n != null)
+                .Select(n => $"  {n!["og"]} → {n!["en"]}");
+            context = "NAME MAPPINGS (you MUST use these exact spellings when these appear):\n"
+                    + string.Join("\n", lines)
+                    + "\n\n";
+        }
     }
 
     private static void StartModel(string modelKey)
@@ -143,7 +179,7 @@ public partial class MainWindow : Window
     // ── Region selector ──────────────────────────────────────────────────────
     private void BtnSelectRegion_Click(object sender, RoutedEventArgs e)
     {
-        _overlay.Hide();
+        overlay.Hide();
         WindowState = WindowState.Minimized;
 
         var selector = new RegionSelector();
@@ -154,15 +190,15 @@ public partial class MainWindow : Window
 
         if (selector.SelectedRegion is { } r)
         {
-            _region = r;
+            region = r;
             TxtRegion.Text       = $"X:{r.X}  Y:{r.Y}  {r.W} × {r.H} px";
             TxtRegion.Foreground = Brushes.LightGreen;
             BtnCapture.IsEnabled = true;
-            _hasLastHash = false;
+            hasLastHash = false;
             SetStatus("Region set — ready.", "#00e5a0");
 
-            _overlay.SetRegion(r);
-            _overlay.Show();
+            overlay.SetRegion(r);
+            overlay.Show();
         }
     }
 
@@ -197,9 +233,9 @@ public partial class MainWindow : Window
 
             await RunCaptureAsync(); // immediate first capture
 
-            _autoTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(secs) };
-            _autoTimer.Tick += async (_, _) => await RunCaptureAsync();
-            _autoTimer.Start();
+            autoTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(secs) };
+            autoTimer.Tick += async (_, _) => await RunCaptureAsync();
+            autoTimer.Start();
         }
         else
         {
@@ -210,49 +246,59 @@ public partial class MainWindow : Window
     // ── Stop button ──────────────────────────────────────────────────────────
     private void BtnStop_Click(object sender, RoutedEventArgs e)
     {
-        _autoTimer?.Stop();
-        _autoTimer = null;
+        autoTimer?.Stop();
+        autoTimer = null;
         BtnCapture.IsEnabled      = true;
         BtnSelectRegion.IsEnabled = true;
         BtnStop.Visibility        = Visibility.Collapsed;
-        _hasLastHash = false;
+        hasLastHash = false;
         SetStatus("Stopped.", "#555566");
     }
 
     // ── Core capture + translate ─────────────────────────────────────────────
     private async Task RunCaptureAsync()
     {
-        if (_region is null) return;
-
-        SetStatus("Capturing screen…", "#888898");
-
-        string base64;
-        try   { base64 = ScreenCapture.CaptureBase64(_region); }
-        catch (Exception ex) { SetStatus($"Capture error: {ex.Message}", "#ff5566"); return; }
-
-        // Skip if image unchanged
-        var hash = ScreenCapture.AverageHash(base64);
-        if (RadioAuto.IsChecked == true && _hasLastHash && ScreenCapture.HammingDistance(hash, _lastHash) < (int)SliderThreshold.Value)
-        {
-            SetStatus($"No change — {DateTime.Now:HH:mm:ss}", "#333344");
-            return;
-        }
-        _lastHash = hash;
-        _hasLastHash = true;
-
-        SetStatus("Sending to Model…", "#888898");
+        if (region is null || requestLock) return;
+        requestLock = true;
 
         try
         {
-            string content = await CallLmStudioAsync(base64);
-            _output.ShowResult(content);
-            SetStatus($"Done — {DateTime.Now:HH:mm:ss}", "#00e5a0");
-            SetDot("#00e5a0");
+            SetStatus("Capturing screen…", "#888898");
+
+            string base64;
+            try { base64 = ScreenCapture.CaptureBase64(region); }
+            catch (Exception ex) { SetStatus($"Capture error: {ex.Message}", "#ff5566"); return; }
+
+            var hash = ScreenCapture.AverageHash(base64);
+            if (RadioAuto.IsChecked == true && hasLastHash && ScreenCapture.HammingDistance(hash, lastHash) < (int)SliderThreshold.Value)
+            {
+                SetStatus($"{lastStatus}", "#00e5a0");
+                return;
+            }
+            lastHash = hash;
+            hasLastHash = true;
+
+            SetStatus("Sending to Model…", "#888898");
+            DateTime now = DateTime.Now;
+
+            try
+            {
+                string content = await CallLmStudioAsync(base64);
+                TimeSpan span = DateTime.Now - now;
+                output.ShowResult(content);
+                lastStatus = $"Done — {DateTime.Now:HH:mm:ss} ({(int)span.TotalMilliseconds}ms)";
+                SetStatus(lastStatus, "#00e5a0");
+                SetDot("#00e5a0");
+            }
+            catch (Exception ex)
+            {
+                SetStatus($"Error: {ex.Message}", "#ff5566");
+                SetDot("#ff5566");
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            SetStatus($"Error: {ex.Message}", "#ff5566");
-            SetDot("#ff5566");
+            requestLock = false;
         }
     }
 
@@ -261,16 +307,21 @@ public partial class MainWindow : Window
     {
         string url = TxtServerUrl.Text.TrimEnd('/') + "/v1/chat/completions";
 
-        const string prompt =
-            "Extract the text from the image above as if you were reading it naturally. " +
-            "Return only valid words and complete sentences. " +
-            "If no text is detected, return — for all fields. " +
-            "The ROMANIZED field must always use the latin alphabet. " +
-            "The TRANSLATION field must always be in English, even if the original text is already in English. " +
-            "Respond in exactly this format:\n" +
-            "ORIGINAL:\n[the extracted text as-is]\n\n" +
-            "ROMANIZED:\n[latin alphabet romanization of the original, or — if already latin]\n\n" +
-            "TRANSLATION:\n[English translation, or copy the original if it is already English]";
+        string prompt = $@"
+            {context}
+            HONORIFIC RULES: Japanese honorifics must NEVER be translated to English titles like Mr./Mrs./Miss/Sir/Ma'am.
+            Always keep them as romaji appended to the name with a hyphen. Examples:\n
+              さん → -san  |  くん → -kun  |  ちゃん → -chan  |  様 → -sama\n
+              先輩 → senpai  |  先生 → sensei  |  様 → -sama  |  殿 → -dono\n\n
+            Extract the text from the image above as if you were reading it naturally.
+            Return only valid words and complete sentences.
+            If no text is detected, return — for all fields.
+            The ROMANIZED field must always use the latin alphabet.
+            The TRANSLATION field must always be in English, even if the original text is already in English.
+            Respond in exactly this format:\n
+            ORIGINAL:\n[the extracted text as-is]\n\n
+            ROMANIZED:\n[latin alphabet romanization of the original, or — if already latin]\n\n
+            TRANSLATION:\n[English translation, or copy the original if it is already English]";
 
         var body = new
         {
@@ -280,7 +331,17 @@ public partial class MainWindow : Window
             max_tokens  = 1024,
             messages    = new object[]
             {
-                new { role = "system", content = "You are a Japanese OCR and translation assistant. Always respond in the exact format given. TRANSLATION must always be in English. ROMANIZED must always use the latin alphabet. Never translate into Japanese. /no_think" },
+                new 
+                { 
+                    role = "system",
+                    content = @"You are a Japanese OCR and translation assistant.
+                            Always respond in the exact format given.
+                            TRANSLATION must always be in English.
+                            ROMANIZED must always use the latin alphabet.
+                            Never translate into anything but english.
+                            Japanese honorifics (san, kun, chan, sama, senpai, sensei, dono, etc.) must always be kept as romaji — never convert them to Mr./Mrs./Miss or any English title.
+                            /no_think"  
+                },
                 new
                 {
                     role    = "user",
