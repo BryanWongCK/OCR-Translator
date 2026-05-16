@@ -45,7 +45,8 @@ Click **Draw Region** and drag over the area of the screen you want to capture a
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download)
 
 ### Build
-```
-dotnet publish "OCR Translator/OCR Translator.csproj" -c Release -o ./dist
+Either run the provided **build.bat** file, or run the following command manually:
+```bash
+dotnet publish "OCR Translator/OCR Translator/OCR Translator.csproj" -c Release -o ./dist
 ```
 The output will be in the `dist/` folder.
