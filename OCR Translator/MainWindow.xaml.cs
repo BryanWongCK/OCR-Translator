@@ -307,12 +307,15 @@ public partial class MainWindow : Window
     {
         string url = TxtServerUrl.Text.TrimEnd('/') + "/v1/chat/completions";
 
-        string prompt = $@"
+        string prompt = 
+            //$@"
+            //{context}
+            //HONORIFIC RULES: Japanese honorifics must NEVER be translated to English titles like Mr./Mrs./Miss/Sir/Ma'am.
+            //Always keep them as romaji appended to the name with a hyphen. Examples:\n
+            //  さん → -san  |  くん → -kun  |  ちゃん → -chan  |  様 → -sama\n
+            //  先輩 → senpai  |  先生 → sensei  |  様 → -sama  |  殿 → -dono\n\n
+            $@"
             {context}
-            HONORIFIC RULES: Japanese honorifics must NEVER be translated to English titles like Mr./Mrs./Miss/Sir/Ma'am.
-            Always keep them as romaji appended to the name with a hyphen. Examples:\n
-              さん → -san  |  くん → -kun  |  ちゃん → -chan  |  様 → -sama\n
-              先輩 → senpai  |  先生 → sensei  |  様 → -sama  |  殿 → -dono\n\n
             Extract the text from the image above as if you were reading it naturally.
             Return only valid words and complete sentences.
             If no text is detected, return — for all fields.
