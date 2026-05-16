@@ -63,7 +63,6 @@ public partial class MainWindow : Window
 
     private void BtnReloadSettings_Click(object sender, RoutedEventArgs e)
     {
-        context = "";
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Select Settings File",
@@ -80,6 +79,7 @@ public partial class MainWindow : Window
 
     private void LoadSettingFile(string path)
     {
+        context = "";
         var arr = JsonNode.Parse(File.ReadAllText(path))?.AsArray();
         if (arr != null)
         {
