@@ -310,6 +310,8 @@ public partial class MainWindow : Window
             try
             {
 #if RapidOCR
+                if (ocr == null)
+                    throw new Exception("RapidOCR Engine unable to start up");
                 string content = await CallLmStudioAsync(ocr.DetectText(imageBytes));
 #else
                 string content = await CallLmStudioAsync(Convert.ToBase64String(imageBytes));
