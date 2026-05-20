@@ -1,0 +1,3 @@
+[submodule "RapidOCRCSharp"]
+	path = RapidOCRCSharp
+	url = https://github.com/RapidAI/RapidOCRCSharp.git
