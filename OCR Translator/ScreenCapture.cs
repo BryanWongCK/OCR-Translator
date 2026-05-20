@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -22,23 +21,30 @@ public static class ScreenCapture
 
     private const uint SRCCOPY = 0x00CC0020;
 
-    public static string CaptureBase64(CaptureRegion r)
+    public static byte[] CaptureBytes(CaptureRegion r)
     {
         if (r.W <= 0 || r.H <= 0)
             throw new ArgumentException("Region dimensions must be positive.");
 
-        IntPtr screenDC  = GetDC(IntPtr.Zero);
-        IntPtr memDC     = CreateCompatibleDC(screenDC);
-        IntPtr hBitmap   = CreateCompatibleBitmap(screenDC, r.W, r.H);
+        int x = (int)((r.X - r.HotX) * r.DpiScale);
+        int y = (int)((r.Y - r.HotY) * r.DpiScale);
+        int w = (int)(r.W * r.DpiScale);
+        int h = (int)(r.H * r.DpiScale);
+
+        IntPtr screenDC = GetDC(IntPtr.Zero);
+        IntPtr memDC = CreateCompatibleDC(screenDC);
+        IntPtr hBitmap = CreateCompatibleBitmap(screenDC, w, h);
         IntPtr oldBitmap = SelectObject(memDC, hBitmap);
 
         try
         {
-            BitBlt(memDC, 0, 0, r.W, r.H, screenDC, r.X, r.Y, SRCCOPY);
-            using var bmp = System.Drawing.Image.FromHbitmap(hBitmap);
-            using var ms  = new MemoryStream();
+            BitBlt(memDC, 0, 0, w, h, screenDC, x, y, SRCCOPY);
+
+            using var bmp = Image.FromHbitmap(hBitmap);
+            using var ms = new MemoryStream();
+
             bmp.Save(ms, ImageFormat.Jpeg);
-            return Convert.ToBase64String(ms.ToArray());
+            return ms.ToArray();
         }
         finally
         {
@@ -49,13 +55,51 @@ public static class ScreenCapture
         }
     }
 
-    public static byte[] AverageHash(string base64, int size = 16)
+    public static byte[] UpscaleImage(byte[] imageBytes, int minWidth = 800, int minHeight = 800)
     {
-        using var ms = new MemoryStream(Convert.FromBase64String(base64));
-        using var src = System.Drawing.Image.FromStream(ms);
+        using var ms = new MemoryStream(imageBytes);
+        using var src = new Bitmap(ms);
 
-        using var small = new System.Drawing.Bitmap(size, size, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-        using var g = System.Drawing.Graphics.FromImage(small);
+        int width = src.Width;
+        int height = src.Height;
+
+        // already large enough → no change
+        if (width >= minWidth && height >= minHeight)
+            return imageBytes;
+
+        // compute scale factor to meet minimum requirement
+        double scaleX = (double)minWidth / width;
+        double scaleY = (double)minHeight / height;
+
+        double scale = Math.Max(scaleX, scaleY);
+
+        int newWidth = (int)Math.Ceiling(width * scale);
+        int newHeight = (int)Math.Ceiling(height * scale);
+
+        using var upscaled = new Bitmap(newWidth, newHeight);
+
+        using (var g = Graphics.FromImage(upscaled))
+        {
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+            g.DrawImage(src, 0, 0, newWidth, newHeight);
+        }
+
+        using var outStream = new MemoryStream();
+        upscaled.Save(outStream, System.Drawing.Imaging.ImageFormat.Jpeg);
+
+        return outStream.ToArray();
+    }
+
+    public static byte[] AverageHash(byte[] imageBytes, int size = 16)
+    {
+        using var ms = new MemoryStream(imageBytes);
+        using var src = Image.FromStream(ms);
+
+        using var small = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+        using var g = Graphics.FromImage(small);
         g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
         g.DrawImage(src, 0, 0, size, size);
 

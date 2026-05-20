@@ -1,17 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <RootNamespace>OCR_Translator</RootNamespace>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ApplicationIcon>app.ico</ApplicationIcon>
-  </PropertyGroup>
-  <ItemGroup>
-    <Resource Include="app.ico"/>
-  </ItemGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<RootNamespace>OCR_Translator</RootNamespace>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ApplicationIcon>app.ico</ApplicationIcon>
+		<Configurations>Debug;Release;Debug Rapid;Release Rapid</Configurations>
+	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Rapid|AnyCPU'">
+		<DefineConstants>$(DefineConstants);RapidOCR</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Rapid|AnyCPU'">
+		<DefineConstants>$(DefineConstants);RapidOCR</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(Configuration)' != '' and $(Configuration.Contains('Rapid'))">
+		<Resource Include="app.ico" />
+		<Content Include="..\model\**\*">    
+			<Link>model\%(RecursiveDir)%(Filename)%(Extension)</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<ProjectReference Include="..\RapidOCRCSharp\RapidOCRLib\RapidOCRLib.csproj" />
+	</ItemGroup>
+	
 </Project>

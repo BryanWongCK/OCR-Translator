@@ -1,3 +1,13 @@
 <Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Debug Rapid" />
+    <BuildType Name="Release" />
+    <BuildType Name="Release Rapid" />
+  </Configurations>
   <Project Path="OCR Translator/OCR Translator.csproj" />
+  <Project Path="RapidOCRCSharp/RapidOCRLib/RapidOCRLib.csproj">
+    <Build Solution="Debug|*" Project="false" />
+    <Build Solution="Release|*" Project="false" />
+  </Project>
 </Solution>

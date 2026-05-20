@@ -17,6 +17,10 @@ public partial class MainWindow : Window
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(90) };
 
+#if RapidOCR
+    private OCR? ocr;
+#endif
+
     private CaptureRegion? region;
     private DispatcherTimer? autoTimer;
     private readonly OutputWindow output;
@@ -24,8 +28,8 @@ public partial class MainWindow : Window
     private byte[]? lastHash;
     private bool hasLastHash;
     private string modelName;
-    private string context;
-    private string lastStatus;
+    private string context = "";
+    private string lastStatus = "";
     private bool requestLock;
 
     public MainWindow()
@@ -35,7 +39,11 @@ public partial class MainWindow : Window
         else
         {
             // Assign default model name and generate config file
+#if RapidOCR
+            modelName = "qwen2.5-7b-instruct";
+#else
             modelName = "qwen3-vl-8b";
+#endif
             File.WriteAllText(".config", modelName);
         }
 
@@ -44,12 +52,23 @@ public partial class MainWindow : Window
         InitializeComponent();
         output = new OutputWindow();
 
-        Loaded += (_, _) =>
+        Loaded += async (_, _) =>
         {
             output.Left = Left + Width + 10;
             output.Top  = Top;
             output.Show();
             SliderThreshold.ValueChanged += (_, e) => TxtThresholdValue.Text = ((int)SliderThreshold.Value).ToString();
+
+#if RapidOCR
+            ocr = new OCR();
+
+            await ocr.Init(
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "model", "det.onnx"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "model", "cls.onnx"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "model", "rec.onnx"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "model", "dict.txt")
+            );
+#endif
         };
 
         Closed += (_, _) =>
@@ -125,6 +144,7 @@ public partial class MainWindow : Window
         };
 
         Process? p = Process.Start(psi);
+        if (p == null) return;
         string output = p.StandardOutput.ReadToEnd();
         p.WaitForExit();
 
@@ -184,7 +204,7 @@ public partial class MainWindow : Window
 
         var selector = new RegionSelector();
         selector.ShowDialog();
-
+        
         WindowState = WindowState.Normal;
         Activate();
 
@@ -265,12 +285,18 @@ public partial class MainWindow : Window
         {
             SetStatus("Capturing screen…", "#888898");
 
-            string base64;
-            try { base64 = ScreenCapture.CaptureBase64(region); }
+            byte[] imageBytes;
+            try 
+            {
+                overlay.Hide();
+                imageBytes = ScreenCapture.CaptureBytes(region);
+                overlay.Show();
+                imageBytes = ScreenCapture.UpscaleImage(imageBytes, 1200, 1200);
+            }
             catch (Exception ex) { SetStatus($"Capture error: {ex.Message}", "#ff5566"); return; }
 
-            var hash = ScreenCapture.AverageHash(base64);
-            if (RadioAuto.IsChecked == true && hasLastHash && ScreenCapture.HammingDistance(hash, lastHash) < (int)SliderThreshold.Value)
+            var hash = ScreenCapture.AverageHash(imageBytes);
+            if (RadioAuto.IsChecked == true && hasLastHash && ScreenCapture.HammingDistance(hash, lastHash ?? []) < (int)SliderThreshold.Value)
             {
                 SetStatus($"{lastStatus}", "#00e5a0");
                 return;
@@ -283,7 +309,11 @@ public partial class MainWindow : Window
 
             try
             {
-                string content = await CallLmStudioAsync(base64);
+#if RapidOCR
+                string content = await CallLmStudioAsync(ocr.DetectText(imageBytes));
+#else
+                string content = await CallLmStudioAsync(Convert.ToBase64String(imageBytes));
+#endif
                 TimeSpan span = DateTime.Now - now;
                 output.ShowResult(content);
                 lastStatus = $"Done — {DateTime.Now:HH:mm:ss} ({(int)span.TotalMilliseconds}ms)";
@@ -303,28 +333,64 @@ public partial class MainWindow : Window
     }
 
     // ── LM Studio API call ───────────────────────────────────────────────────
-    private async Task<string> CallLmStudioAsync(string base64)
+#if RapidOCR
+    private async Task<string> CallLmStudioAsync(string textToTL)
     {
-        string url = TxtServerUrl.Text.TrimEnd('/') + "/v1/chat/completions";
+        // Test no text and english input
+        if (string.IsNullOrWhiteSpace(textToTL))
+        {
+            return """
+                ORIGINAL:\n—\n\n
+                ROMANIZED:\n—\n\n
+                TRANSLATION:\n—
+                """;
+        }
+#else
+    private async Task<string> CallLmStudioAsync(string base64)
+    { 
+#endif
+    string url = TxtServerUrl.Text.TrimEnd('/') + "/v1/chat/completions";
 
-        string prompt = 
-            //$@"
-            //{context}
-            //HONORIFIC RULES: Japanese honorifics must NEVER be translated to English titles like Mr./Mrs./Miss/Sir/Ma'am.
-            //Always keep them as romaji appended to the name with a hyphen. Examples:\n
-            //  さん → -san  |  くん → -kun  |  ちゃん → -chan  |  様 → -sama\n
-            //  先輩 → senpai  |  先生 → sensei  |  様 → -sama  |  殿 → -dono\n\n
-            $@"
-            {context}
-            Extract the text from the image above as if you were reading it naturally.
-            Return only valid words and complete sentences.
-            If no text is detected, return — for all fields.
-            The ROMANIZED field must always use the latin alphabet.
-            The TRANSLATION field must always be in English, even if the original text is already in English.
-            Respond in exactly this format:\n
-            ORIGINAL:\n[the extracted text as-is]\n\n
-            ROMANIZED:\n[latin alphabet romanization of the original, or — if already latin]\n\n
-            TRANSLATION:\n[English translation, or copy the original if it is already English]";
+#if RapidOCR
+    // switch this to output json
+    string prompt = 
+        //$@"
+        //{context}
+        //HONORIFIC RULES: Japanese honorifics must NEVER be translated to English titles like Mr./Mrs./Miss/Sir/Ma'am.
+        //Always keep them as romaji appended to the name with a hyphen. Examples:\n
+        //  さん → -san  |  くん → -kun  |  ちゃん → -chan  |  様 → -sama\n
+        //  先輩 → senpai  |  先生 → sensei  |  様 → -sama  |  殿 → -dono\n\n
+        $@"
+        {context}
+        Translate the following text as if you were reading it naturally:
+        ""{textToTL}""
+        Return only valid words and complete sentences.
+        The ROMANIZED field must always use the latin alphabet.
+        The TRANSLATION field must always be in English, even if the original text is already in English.
+        Respond in exactly this format:\n
+        ORIGINAL:\n[the extracted text as-is]\n\n
+        ROMANIZED:\n[latin alphabet romanization of the original, or — if already latin]\n\n
+        TRANSLATION:\n[English translation, or copy the original if it is already English]";
+#else
+    string prompt =
+        //$@"
+        //{context}
+        //HONORIFIC RULES: Japanese honorifics must NEVER be translated to English titles like Mr./Mrs./Miss/Sir/Ma'am.
+        //Always keep them as romaji appended to the name with a hyphen. Examples:\n
+        //  さん → -san  |  くん → -kun  |  ちゃん → -chan  |  様 → -sama\n
+        //  先輩 → senpai  |  先生 → sensei  |  様 → -sama  |  殿 → -dono\n\n
+        $@"
+        {context}
+        Extract the text from the image above as if you were reading it naturally.
+        Return only valid words and complete sentences.
+        If no text is detected, return — for all fields.
+        The ROMANIZED field must always use the latin alphabet.
+        The TRANSLATION field must always be in English, even if the original text is already in English.
+        Respond in exactly this format:\n
+        ORIGINAL:\n[the extracted text as-is]\n\n
+        ROMANIZED:\n[latin alphabet romanization of the original, or — if already latin]\n\n
+        TRANSLATION:\n[English translation, or copy the original if it is already English]";
+#endif
 
         var body = new
         {
@@ -334,8 +400,29 @@ public partial class MainWindow : Window
             max_tokens  = 1024,
             messages    = new object[]
             {
+#if RapidOCR
                 new 
                 { 
+                    role = "system",
+                    content = @"You are a Japanese to english translation assistant.
+                            Always respond in the exact format given.
+                            TRANSLATION must always be in English.
+                            ROMANIZED must always use the latin alphabet.
+                            Never translate into anything but english.
+                            Japanese honorifics (san, kun, chan, sama, senpai, sensei, dono, etc.) must always be kept as romaji — never convert them to Mr./Mrs./Miss or any English title.
+                            "  
+                },
+                new
+                {
+                    role    = "user",
+                    content = new object[]
+                    {
+                        new { type = "text", text = prompt }
+                    }
+                }
+#else
+                new
+                {
                     role = "system",
                     content = @"You are a Japanese OCR and translation assistant.
                             Always respond in the exact format given.
@@ -343,7 +430,7 @@ public partial class MainWindow : Window
                             ROMANIZED must always use the latin alphabet.
                             Never translate into anything but english.
                             Japanese honorifics (san, kun, chan, sama, senpai, sensei, dono, etc.) must always be kept as romaji — never convert them to Mr./Mrs./Miss or any English title.
-                            /no_think"  
+                            /no_think"
                 },
                 new
                 {
@@ -354,6 +441,7 @@ public partial class MainWindow : Window
                         new { type = "text", text = prompt }
                     }
                 }
+#endif
             }
         };
 
