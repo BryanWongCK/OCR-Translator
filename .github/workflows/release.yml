@@ -21,17 +21,35 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Publish
-        run: dotnet publish "OCR Translator/OCR Translator.csproj" -c Release -o ./dist
+      - name: Publish Release
+        run: dotnet publish "OCR Translator/OCR Translator.csproj" -c Release -o ./dist/Release
+        
+      - name: Publish RapidOCR Release
+        run: dotnet publish "OCR Translator/OCR Translator.csproj" -c "Release Rapid" -o ""./dist/RapidOCR Release"
 
-      - name: Remove unnecessary files
-        run: Remove-Item ./dist/*.pdb
+      - name: Remove pdb files
+        run: Remove-Item ./dist/*/*.pdb
 
-      - name: Zip
-        run: Compress-Archive -Path ./dist/* -DestinationPath ./OCR-Translator_${{ github.ref_name }}.zip
+      - name: Remove unsupported runtimes (RapidOCR Release)
+        run: |
+          Remove-Item "./dist/Release Rapid/runtimes/android" -Recurse -Force
+          Remove-Item "./dist/Release Rapid/runtimes/ios" -Recurse -Force
+          Remove-Item "./dist/Release Rapid/runtimes/linux-arm64" -Recurse -Force
+          Remove-Item "./dist/Release Rapid/runtimes/linux-x64" -Recurse -Force
+          Remove-Item "./dist/Release Rapid/runtimes/osx-arm64" -Recurse -Force
+          Remove-Item "./dist/Release Rapid/runtimes/win-arm64" -Recurse -Force
+          Remove-Item "./dist/Release Rapid/runtimes/win-x86" -Recurse -Force
 
-      - name: Create Release
+      - name: Zip Release
+        run: Compress-Archive -Path ./dist/Release/* -DestinationPath ./OCR-Translator_${{ github.ref_name }}.zip
+
+      - name: Zip RapidOCR Release
+        run: Compress-Archive -Path ./dist/RapidOCR Release/* -DestinationPath ./RapidOCR-Translator_${{ github.ref_name }}.zip
+
+      - name: Create Releases
         uses: softprops/action-gh-release@v2
         with:
           name: OCR Translator ${{ github.ref_name }}
-          files: OCR-Translator_${{ github.ref_name }}.zip
+          files: |
+            OCR-Translator_${{ github.ref_name }}.zip
+            RapidOCR-Translator_${{ github.ref_name }}.zip
