@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -25,7 +27,7 @@ jobs:
         run: dotnet publish "OCR Translator/OCR Translator.csproj" -c Release -o ./dist/Release
         
       - name: Publish RapidOCR Release
-        run: dotnet publish "OCR Translator/OCR Translator.csproj" -c "Release Rapid" -o ""./dist/RapidOCR Release"
+        run: dotnet publish "OCR Translator/OCR Translator.csproj" -c "Release Rapid" -o "./dist/RapidOCR Release"
 
       - name: Remove pdb files
         run: Remove-Item ./dist/*/*.pdb
