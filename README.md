@@ -100,8 +100,8 @@ The output will be in the `dist\` folder.
 
 ## Third-Party Components
 
-This project includes:
-
 - RapidOCRCSharp (submodule)  
-  Source: https://github.com/RapidAI/RapidOCRCSharp  
-  License: (add license type if known, e.g. Apache-2.0 / MIT)
+  Repository: https://github.com/<repo>  
+  Purpose: OCR text detection and recognition pipeline
+  
+No explicit license file is present in the upstream repository at time of integration. The component is used as-is with unknown licensing status.
