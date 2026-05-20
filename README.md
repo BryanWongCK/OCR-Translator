@@ -1,23 +1,57 @@
 # Overview
-OCR Translator is an entirely offline local JP to EN Translation tool enabled by OCR using self hosted Vision capable LLM Models. The default model used  is [Qwen3-VL-8B](https://huggingface.co/lmstudio-community/Qwen3-VL-8B-Instruct-GGUF).
+OCR Translator is an entirely offline local JP to EN translation tool that uses OCR + self-hosted LLMs.
 
-OCR Translator supports selectable region to be translated and supports customizable auto translation.
+There are currently 2 versions:
+- **Vision-based LLM OCR** using a vision-capable LLM (default: [Qwen3-VL-8B](https://huggingface.co/lmstudio-community/Qwen3-VL-8B-Instruct-GGUF))
+- **RapidOCR with LLM** using RapidOCR to extract text before translated by an LLM (default: [Qwen2.5-7B](https://huggingface.co/lmstudio-community/Qwen2.5-7B-Instruct-GGUF))
+
+The tool supports selectable screen region translation and customizable mapped translation.
+
 ![Sample](/Images/sample.JPG)
 
-This tool is currently only available on Windows and was created with the use of AI tools.
+> Windows only. Built with AI-assisted development.
+
+---
 
 ## Getting Started
+
 ### Requirements
-  - [LM Studio](https://lmstudio.ai/)
-  - [Vision capable LLM model](https://huggingface.co/lmstudio-community/Qwen3-VL-8B-Instruct-GGUF)
-  - [.Net 10 Runtime](https://dotnet.microsoft.com/en-us/download)
-### Installation
-1. Install [LM Studio](https://lmstudio.ai/)
-2. Download a vision capable LLM model with LM Studio
-    1. Make sure **CORS is enabled** in LM Studio's server settings
-    2. By default a .config file is generated with the model name "qwen3-vl-8b".
-    3. Replace the model name in the config with a new model name if not using qwen3-vl-8b.
-3. Download and run the latest **[OCR Translator.exe](https://github.com/BryanWongCK/OCR-Translator/releases/latest)** directly.
+- [LM Studio](https://lmstudio.ai/)
+- [.NET 10 Runtime](https://dotnet.microsoft.com/en-us/download)
+
+---
+
+## Installation
+
+### 1. Install LM Studio
+[Download and install](https://lmstudio.ai/)
+
+### 2. Configure LM Studio
+- Download a supported model in LM Studio
+- Ensure **CORS is enabled** in LM Studio server settings
+
+### 3. Choose Your Mode
+
+#### Vision Mode
+- Requires a **vision-capable model**
+- Default model:  
+  - [`qwen3-vl-8b`](https://huggingface.co/lmstudio-community/Qwen3-VL-8B-Instruct-GGUF)
+
+#### RapidOCR Mode
+- Does **not require a vision model**
+- Uses **RapidOCR for text extraction**
+- Sends extracted text to an LLM for translation
+- Can use lighter weight models due to not requiring vision capabilities
+- Default model:
+  - [`qwen2.5-7b`](https://huggingface.co/lmstudio-community/Qwen2.5-7B-Instruct-GGUF)
+
+
+### 4. Run the Application
+Download and run the latest **[release](https://github.com/BryanWongCK/OCR-Translator/releases/latest)** version of your choice directly.
+
+
+---
+
 
 ## How to Use
 
@@ -44,9 +78,30 @@ Click **Draw Region** and drag over the area of the screen you want to capture a
 ### Requirements
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download)
 
+### Cloning the Repository
+
+This project uses Git submodules. Make sure to clone with submodules enabled:
+
+```bash
+git clone --recursive https://github.com/BryanWongCK/OCR-Translator.git
+```
+
 ### Build
 Either run the provided **build.bat** file, or run the following command manually:
+#### Vision Model
 ```bash
-dotnet publish "OCR Translator/OCR Translator/OCR Translator.csproj" -c Release -o ./dist
+dotnet publish "OCR Translator/OCR Translator.csproj" -c Release -o .\dist\Release
 ```
-The output will be in the `dist/` folder.
+#### RapidOCR
+```bash
+dotnet publish "OCR Translator/OCR Translator.csproj" -c "Release Rapid" -o ".\dist\Release Rapid"
+```
+The output will be in the `dist\` folder.
+
+## Third-Party Components
+
+This project includes:
+
+- RapidOCRCSharp (submodule)  
+  Source: https://github.com/RapidAI/RapidOCRCSharp  
+  License: (add license type if known, e.g. Apache-2.0 / MIT)
