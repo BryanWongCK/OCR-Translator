@@ -46,7 +46,7 @@ jobs:
         run: Compress-Archive -Path ./dist/Release/* -DestinationPath ./OCR-Translator_${{ github.ref_name }}.zip
 
       - name: Zip RapidOCR Release
-        run: Compress-Archive -Path ./dist/RapidOCR Release/* -DestinationPath ./RapidOCR-Translator_${{ github.ref_name }}.zip
+        run: Compress-Archive -Path "./dist/RapidOCR Release/*" -DestinationPath ./RapidOCR-Translator_${{ github.ref_name }}.zip
 
       - name: Create Releases
         uses: softprops/action-gh-release@v2
