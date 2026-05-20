@@ -34,13 +34,13 @@ jobs:
 
       - name: Remove unsupported runtimes (RapidOCR Release)
         run: |
-          Remove-Item "./dist/Release Rapid/runtimes/android" -Recurse -Force
-          Remove-Item "./dist/Release Rapid/runtimes/ios" -Recurse -Force
-          Remove-Item "./dist/Release Rapid/runtimes/linux-arm64" -Recurse -Force
-          Remove-Item "./dist/Release Rapid/runtimes/linux-x64" -Recurse -Force
-          Remove-Item "./dist/Release Rapid/runtimes/osx-arm64" -Recurse -Force
-          Remove-Item "./dist/Release Rapid/runtimes/win-arm64" -Recurse -Force
-          Remove-Item "./dist/Release Rapid/runtimes/win-x86" -Recurse -Force
+          Remove-Item "./dist/RapidOCR Release/runtimes/android" -Recurse -Force
+          Remove-Item "./dist/RapidOCR Release/runtimes/ios" -Recurse -Force
+          Remove-Item "./dist/RapidOCR Release/runtimes/linux-arm64" -Recurse -Force
+          Remove-Item "./dist/RapidOCR Release/runtimes/linux-x64" -Recurse -Force
+          Remove-Item "./dist/RapidOCR Release/runtimes/osx-arm64" -Recurse -Force
+          Remove-Item "./dist/RapidOCR Release/runtimes/win-arm64" -Recurse -Force
+          Remove-Item "./dist/RapidOCR Release/runtimes/win-x86" -Recurse -Force
 
       - name: Zip Release
         run: Compress-Archive -Path ./dist/Release/* -DestinationPath ./OCR-Translator_${{ github.ref_name }}.zip
