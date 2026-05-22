@@ -98,10 +98,13 @@ dotnet publish "OCR Translator/OCR Translator.csproj" -c "Release Rapid" -o ".\d
 ```
 The output will be in the `dist\` folder.
 
+## ⚠️ Known Issues
+- Windows screen scale causes inaccurate region drawning
+
 ## Third-Party Components
 
 - RapidOCRCSharp (submodule)  
   Repository: https://github.com/<repo>  
   Purpose: OCR text detection and recognition pipeline
   
-No explicit license file is present in the upstream repository at time of integration. The component is used as-is with unknown licensing status.
+No explicit license file is present in the upstream repository at time of integration. The component is used as-is with unknown licensing status pending author approval.
