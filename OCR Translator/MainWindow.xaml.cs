@@ -325,10 +325,6 @@ public partial class MainWindow : Window
                 SetDot("#ff5566");
             }
         }
-        finally
-        {
-            //requestLock = false;
-        }
     }
 
     // ── LM Studio API call ───────────────────────────────────────────────────
