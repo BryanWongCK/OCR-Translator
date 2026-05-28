@@ -1,16 +1,14 @@
 <Window x:Class="OCRTranslator.OutputWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Translation Output" Height="480" Width="420"
+        Title="Translation Output" Height="200" Width="420"
         WindowStartupLocation="Manual"
         Background="#0d0d0f" Foreground="#e8e8ec"
         FontFamily="Segoe UI">
-  <!-- Height is modified in OutputWindow constructor -->
+    
   <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/>
-      <RowDefinition Height="*"/>
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
 
@@ -31,63 +29,8 @@
       </Grid>
     </Border>
 
-    
-    <!-- Original -->
-    <Grid x:Name="GridOriginal" Grid.Row="1">
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-      </Grid.RowDefinitions>
-      <Border Background="#0f0f12" BorderBrush="#1a1a22" BorderThickness="0,0,0,1" Padding="16,5">
-        <Grid>
-          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-          <TextBlock FontFamily="Consolas" FontSize="9" Foreground="#333344" VerticalAlignment="Center">ORIGINAL TEXT</TextBlock>
-          <Button x:Name="BtnCopyOriginal" Grid.Column="1"
-                  FontFamily="Consolas" FontSize="9" Content="copy"
-                  Background="Transparent" Foreground="#333344"
-                  BorderBrush="#222230" BorderThickness="1" Padding="7,2"
-                  Cursor="Hand" Click="BtnCopyOriginal_Click"/>
-        </Grid>
-      </Border>
-      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Background="#0d0d0f">
-        <TextBox x:Name="TxtOriginal" FontFamily="Consolas" FontSize="12"
-                 Foreground="#9090a8" Padding="16,10" TextWrapping="Wrap" Text="—"
-                 Background="Transparent" BorderThickness="0"
-                 IsReadOnly="True" IsReadOnlyCaretVisible="True"
-                 CaretBrush="#9090a8" SelectionBrush="#00e5a040"
-                 VerticalScrollBarVisibility="Disabled"/>
-      </ScrollViewer>
-    </Grid>
-
-    <!-- Romanized -->
-    <Grid x:Name="GridRomaji" Grid.Row="2">
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-      </Grid.RowDefinitions>
-      <Border Background="#0f0f12" BorderBrush="#1a1a22" BorderThickness="0,1,0,1" Padding="16,5">
-        <Grid>
-          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-          <TextBlock FontFamily="Consolas" FontSize="9" Foreground="#333344" VerticalAlignment="Center">ROMANIZED</TextBlock>
-          <Button x:Name="BtnCopyRomaji" Grid.Column="1"
-                  FontFamily="Consolas" FontSize="9" Content="copy"
-                  Background="Transparent" Foreground="#333344"
-                  BorderBrush="#222230" BorderThickness="1" Padding="7,2"
-                  Cursor="Hand" Click="BtnCopyRomaji_Click"/>
-        </Grid>
-      </Border>
-      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Background="#0d0d0f">
-        <TextBox x:Name="TxtRomaji" FontFamily="Consolas" FontSize="12"
-                 Foreground="#6ec6ff" Padding="16,10" TextWrapping="Wrap" Text="—"
-                 Background="Transparent" BorderThickness="0"
-                 IsReadOnly="True" IsReadOnlyCaretVisible="True"
-                 CaretBrush="#6ec6ff" SelectionBrush="#00e5a040"
-                 VerticalScrollBarVisibility="Disabled"/>
-      </ScrollViewer>
-    </Grid>
-
     <!-- Translation -->
-    <Grid Grid.Row="3">
+    <Grid Grid.Row="1">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>

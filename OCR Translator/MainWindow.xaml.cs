@@ -28,7 +28,6 @@ public partial class MainWindow : Window
     private string modelName;
     private string context = "";
     private string lastStatus = "";
-    private bool requestLock;
 
     public MainWindow()
     {
@@ -336,88 +335,33 @@ public partial class MainWindow : Window
 #if RapidOCR
     private async Task<string> CallLmStudioAsync(string textToTL)
     {
-        // Directly output rapid extracted text
-        output.OriginalText = textToTL;
-
-        // Test no text and english input
         if (string.IsNullOrWhiteSpace(textToTL))
-        {
-            return 
-                """
-                {
-                    "rm": "—",
-                    "en": "—"          
-                };
-                """;
-        }
-#else
-    private async Task<string> CallLmStudioAsync(string base64)
-    { 
-#endif
-    string url = TxtServerUrl.Text.TrimEnd('/') + "/v1/chat/completions";
+            return "—";
 
-#if RapidOCR
-    // switch this to output json
-    string prompt = 
-        //$@"
-        //{context}
-        //HONORIFIC RULES: Japanese honorifics must NEVER be translated to English titles like Mr./Mrs./Miss/Sir/Ma'am.
-        //Always keep them as romaji appended to the name with a hyphen. Examples:\n
-        //  さん → -san  |  くん → -kun  |  ちゃん → -chan  |  様 → -sama\n
-        //  先輩 → senpai  |  先生 → sensei  |  様 → -sama  |  殿 → -dono\n\n
+        string prompt = 
         $@"
         {context}
-        Translate the following text as if you were reading it naturally:
+        Translate the following text into english as if you were reading it naturally:
         ""{textToTL}""
-        Return only valid words and complete sentences."
-        +        
-#if ShowSteps
-        @"       
-        If no text is detected, return """""" for all fields.
-        The rm field must always use the latin alphabet.
-        The en field must always be in English, even if the original text is already in English.
-        Respond in exactly this json format:
-        {{
-            ""rm"": ""romanized"",
-            ""en"": ""translated text""          
-        }}";
+        Return only valid words and complete sentences.
+        Respond with only the translated text. If there is no text you must respond with '—'";
 #else
-        "\nRespond with only the translated text";    
-#endif
-#else
+    private async Task<string> CallLmStudioAsync(string base64)
+    {
         string prompt =
-        //$@"
-        //{context}
-        //HONORIFIC RULES: Japanese honorifics must NEVER be translated to English titles like Mr./Mrs./Miss/Sir/Ma'am.
-        //Always keep them as romaji appended to the name with a hyphen. Examples:\n
-        //  さん → -san  |  くん → -kun  |  ちゃん → -chan  |  様 → -sama\n
-        //  先輩 → senpai  |  先生 → sensei  |  様 → -sama  |  殿 → -dono\n\n
         $@"
         {context}
         Extract the text from the image above as if you were reading it naturally.
-        Return only valid words and complete sentences."
-        +
-#if ShowSteps
-        @"        
-        If no text is detected, return """""" for all fields.
-        The rm field must always use the latin alphabet.
-        The en field must always be in English, even if the original text is already in English."
-        Respond in exactly this json format:
-        {{
-            ""og"": ""extracted text"",
-            ""rm"": ""romanized"",
-            ""en"": ""translated text""         
-        }}";
-#else
-        "\nRespond with only the translated text. If there is no text you must respond with '—'";
-#endif
+        Then translate it to english.
+        Return only valid words and complete sentences.
+        Respond with only the translated text. If there is no text you must respond with '—'";
 #endif
 
         var body = new
         {
             model       = "",
             stream      = false,
-            temperature = 0.1,
+            temperature = 0.3,
             max_tokens  = 1024,
             messages    = new object[]
             {
@@ -426,12 +370,9 @@ public partial class MainWindow : Window
                 { 
                     role = "system",
                     content = @"You are a Japanese to english translation assistant.
-                            Always respond in the exact format given.
-                            TRANSLATION must always be in English.
-                            ROMANIZED must always use the latin alphabet.
                             Never translate into anything but english.
                             Japanese honorifics (san, kun, chan, sama, senpai, sensei, dono, etc.) must always be kept as romaji — never convert them to Mr./Mrs./Miss or any English title.
-                            "  
+                            /no_think"  
                 },
                 new
                 {
@@ -445,20 +386,10 @@ public partial class MainWindow : Window
                 new
                 {
                     role = "system",
-#if ShowSteps
-                    content = @"You are a Japanese OCR and translation assistant.
-                            Always respond in the exact format given.
-                            TRANSLATION must always be in English.
-                            ROMANIZED must always use the latin alphabet.
-                            Never translate into anything but english.
-                            Japanese honorifics (san, kun, chan, sama, senpai, sensei, dono, etc.) must always be kept as romaji — never convert them to Mr./Mrs./Miss or any English title.
-                            /no_think"
-#else
                     content = @"You are a Japanese OCR translation assistant.
                             Never translate into anything but english.
                             Japanese honorifics (san, kun, chan, sama, senpai, sensei, dono, etc.) must always be kept as romaji — never convert them to Mr./Mrs./Miss or any English title.
                             /no_think"
-#endif
                 },
                 new
                 {
@@ -470,9 +401,10 @@ public partial class MainWindow : Window
                     }
                 }
 #endif
-                }
+            }
         };
 
+        string url = TxtServerUrl.Text.TrimEnd('/') + "/v1/chat/completions";
         using var resp = await Http.PostAsJsonAsync(url, body);
         resp.EnsureSuccessStatusCode();
 
