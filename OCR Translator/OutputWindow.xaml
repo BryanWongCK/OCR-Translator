@@ -5,7 +5,7 @@
         WindowStartupLocation="Manual"
         Background="#0d0d0f" Foreground="#e8e8ec"
         FontFamily="Segoe UI">
-
+  <!-- Height is modified in OutputWindow constructor -->
   <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
@@ -31,8 +31,9 @@
       </Grid>
     </Border>
 
+    
     <!-- Original -->
-    <Grid Grid.Row="1">
+    <Grid x:Name="GridOriginal" Grid.Row="1">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>
@@ -59,7 +60,7 @@
     </Grid>
 
     <!-- Romanized -->
-    <Grid Grid.Row="2">
+    <Grid x:Name="GridRomaji" Grid.Row="2">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>
