@@ -7,6 +7,8 @@
   </Configurations>
   <Project Path="OCR Translator/OCR Translator.csproj" />
   <Project Path="RapidOCRCSharp/RapidOCRLib/RapidOCRLib.csproj">
+    <BuildType Solution="Debug Rapid|*" Project="Debug" />
+    <BuildType Solution="Release Rapid|*" Project="Release" />
     <Build Solution="Debug|*" Project="false" />
     <Build Solution="Release|*" Project="false" />
   </Project>
