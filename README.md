@@ -101,10 +101,9 @@ The output will be in the `dist\` folder.
 ## ⚠️ Known Issues
 - Windows screen scale causes inaccurate region drawning
 
-## Third-Party Components
+## Third-Party Dependencies
 
-- RapidOCRCSharp (submodule)  
-  Repository: https://github.com/<repo>  
-  Purpose: OCR text detection and recognition pipeline
-  
-No explicit license file is present in the upstream repository at time of integration. The component is used as-is with unknown licensing status pending author approval.
+[RapidOCRCSharp](https://github.com/RapidAI/RapidOCRCSharp)
+
+RapidAI is licensed under the Apache License 2.0.
+Copyright (c) 2021 RapidAI. All rights reserved.
