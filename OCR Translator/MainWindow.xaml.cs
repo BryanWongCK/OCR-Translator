@@ -278,52 +278,49 @@ public partial class MainWindow : Window
     {
         if (region is null) return;
 
+        SetStatus("Capturing screen…", "#888898");
+
+        byte[] imageBytes;
+        try 
+        {
+            overlay.Hide();
+            imageBytes = ScreenCapture.CaptureBytes(region);
+            overlay.Show();
+            imageBytes = ScreenCapture.UpscaleImage(imageBytes, 1200, 1200);
+        }
+        catch (Exception ex) { SetStatus($"Capture error: {ex.Message}", "#ff5566"); return; }
+
+        var hash = ScreenCapture.AverageHash(imageBytes);
+        if (RadioAuto.IsChecked == true && hasLastHash && ScreenCapture.HammingDistance(hash, lastHash ?? []) < (int)SliderThreshold.Value)
+        {
+            SetStatus($"{lastStatus}", "#00e5a0");
+            return;
+        }
+        lastHash = hash;
+        hasLastHash = true;
+
+        SetStatus("Sending to Model…", "#888898");
+        DateTime now = DateTime.Now;
+
         try
         {
-            SetStatus("Capturing screen…", "#888898");
-
-            byte[] imageBytes;
-            try 
-            {
-                overlay.Hide();
-                imageBytes = ScreenCapture.CaptureBytes(region);
-                overlay.Show();
-                imageBytes = ScreenCapture.UpscaleImage(imageBytes, 1200, 1200);
-            }
-            catch (Exception ex) { SetStatus($"Capture error: {ex.Message}", "#ff5566"); return; }
-
-            var hash = ScreenCapture.AverageHash(imageBytes);
-            if (RadioAuto.IsChecked == true && hasLastHash && ScreenCapture.HammingDistance(hash, lastHash ?? []) < (int)SliderThreshold.Value)
-            {
-                SetStatus($"{lastStatus}", "#00e5a0");
-                return;
-            }
-            lastHash = hash;
-            hasLastHash = true;
-
-            SetStatus("Sending to Model…", "#888898");
-            DateTime now = DateTime.Now;
-
-            try
-            {
 #if RapidOCR
-                if (ocr == null)
-                    throw new Exception("RapidOCR Engine unable to start up");
-                string content = await CallLmStudioAsync(ocr.DetectText(imageBytes));
+            if (ocr == null)
+                throw new Exception("RapidOCR Engine unable to start up");
+            string content = await CallLmStudioAsync(ocr.DetectText(imageBytes));
 #else
-                string content = await CallLmStudioAsync(Convert.ToBase64String(imageBytes));
+            string content = await CallLmStudioAsync(Convert.ToBase64String(imageBytes));
 #endif
-                TimeSpan span = DateTime.Now - now;
-                output.ShowResult(content);
-                lastStatus = $"Done — {DateTime.Now:HH:mm:ss} ({(int)span.TotalMilliseconds}ms)";
-                SetStatus(lastStatus, "#00e5a0");
-                SetDot("#00e5a0");
-            }
-            catch (Exception ex)
-            {
-                SetStatus($"Error: {ex.Message}", "#ff5566");
-                SetDot("#ff5566");
-            }
+            TimeSpan span = DateTime.Now - now;
+            output.ShowResult(content);
+            lastStatus = $"Done — {DateTime.Now:HH:mm:ss} ({(int)span.TotalMilliseconds}ms)";
+            SetStatus(lastStatus, "#00e5a0");
+            SetDot("#00e5a0");
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Error: {ex.Message}", "#ff5566");
+            SetDot("#ff5566");
         }
     }
 
@@ -340,7 +337,8 @@ public partial class MainWindow : Window
         Translate the following text into english as if you were reading it naturally:
         ""{textToTL}""
         Return only valid words and complete sentences.
-        Respond with only the translated text. If there is no text you must respond with '—'";
+        You MUST respond in english. If there is no text you must respond with '—'
+        Respond with only the translated text.";
 #else
     private async Task<string> CallLmStudioAsync(string base64)
     {
@@ -350,7 +348,8 @@ public partial class MainWindow : Window
         Extract the text from the image above as if you were reading it naturally.
         Then translate it to english.
         Return only valid words and complete sentences.
-        Respond with only the translated text. If there is no text you must respond with '—'";
+        You MUST respond in english. If there is no text you must respond with '—'
+        Respond with only the translated text.";
 #endif
 
         var body = new
