@@ -30,9 +30,9 @@ The tool supports selectable screen region translation and customizable mapped t
 - Download a supported model in LM Studio
 - Ensure **CORS is enabled** in LM Studio server settings
 
-### 3. Choose Your Mode
+### 3. Choose Your Download
 
-#### Vision Mode
+#### OCR Mode
 - Requires a **vision-capable model**
 - Default model:  
   - [`qwen3-vl-8b`](https://huggingface.co/lmstudio-community/Qwen3-VL-8B-Instruct-GGUF)
@@ -80,15 +80,21 @@ Click **Draw Region** and drag over the area of the screen you want to capture a
 
 ### Cloning the Repository
 
-This project uses Git submodules. Make sure to clone with submodules enabled:
+(Optional) This project references [RapidOCRCSharp](https://github.com/RapidAI/RapidOCRCSharp) as a submodules to build the RapidOCR version. Make sure to install required dependencies and clone with submodules enabled:
 
 ```bash
 git clone --recursive https://github.com/BryanWongCK/OCR-Translator.git
 ```
 
+Or clone without RapidOCR version
+
+```bash
+git clone https://github.com/BryanWongCK/OCR-Translator.git
+```
+
 ### Build
-Either run the provided **build.bat** file, or run the following command manually:
-#### Vision Model
+Build using command line with the provided **build.bat** file or run following commands:
+#### Vision OCR Model
 ```bash
 dotnet publish "OCR Translator/OCR Translator.csproj" -c Release -o .\dist\Release
 ```
@@ -98,8 +104,10 @@ dotnet publish "OCR Translator/OCR Translator.csproj" -c "Release Rapid" -o ".\d
 ```
 The output will be in the `dist\` folder.
 
+Or `Build and Run` from Visual Studio using the provided slnx file
+
 ## ⚠️ Known Issues
-- Windows screen scale causes inaccurate region drawning
+- Windows scaling causes wrong capture regions
 
 ## Third-Party Dependencies
 
