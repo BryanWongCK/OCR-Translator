@@ -104,7 +104,7 @@ dotnet publish "OCR Translator/OCR Translator.csproj" -c "Release Rapid" -o ".\d
 ```
 The output will be in the `dist\` folder.
 
-Or `Build and Run` from Visual Studio using the provided slnx file
+Or select either `Release` or `Release Rapid` configuration and `Build` from Visual Studio using the provided slnx file.
 
 ## ⚠️ Known Issues
 - Windows scaling causes wrong capture regions
